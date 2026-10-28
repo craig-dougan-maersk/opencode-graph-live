@@ -25,6 +25,18 @@ Requires a recent opencode build with TUI plugin support.
 opencode plugin add opencode-graph-live@latest
 ```
 
+### Collapsed by default
+
+The panel starts collapsed so the sidebar stays quiet; click the header arrow to expand it. Pass the option as `false` to start expanded:
+
+```jsonc title="opencode.jsonc"
+{
+  "plugins": [
+    { "package": "opencode-graph-live", "options": { "collapsedByDefault": true } }
+  ]
+}
+```
+
 
 ## Usage
 

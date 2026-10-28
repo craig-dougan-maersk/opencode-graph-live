@@ -8,7 +8,13 @@
     "url": "https://github.com/4m1z/opencode-graph-live"
   },
   "homepage": "https://github.com/4m1z/opencode-graph-live#readme",
-  "keywords": ["opencode", "opencode-plugin", "tui", "sidebar", "file-graph"],
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "tui",
+    "sidebar",
+    "file-graph"
+  ],
   "type": "module",
   "main": "./src/index.ts",
   "exports": {
@@ -22,9 +28,9 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "bun build ./src/index.ts --outdir ./dist --target bun && bun build ./src/tui.tsx --outdir ./dist --target bun --external @opencode/plugin --external '@opencode/plugin/*' --external '@opentui/*' --external solid-js",
-    "prepack": "bun run build",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "compile": "bun build ./src/index.ts --outdir ./dist --target bun && bun build ./src/tui.tsx --outdir ./dist --target bun --external @opencode/plugin --external '@opencode/plugin/*' --external '@opentui/*' --external solid-js",
+    "prepublishOnly": "bun run compile"
   },
   "dependencies": {
     "@opencode/plugin": "latest"

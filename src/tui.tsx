@@ -684,7 +684,7 @@ function notifyFailures(ctx: PluginContext, sessionID: string, list: Entry[]): v
 
 ////////////////////////////// Components //////////////////////////////
 
-function GraphPanel(props: { sessionID: string; enabled: boolean; filter: Filter }) {
+function GraphPanel(props: { sessionID: string; enabled: boolean; filter: Filter; collapsed: boolean; onToggle: () => void }) {
   const ctx = usePlugin()
   const palette = createMemo<Palette>(() => resolvePalette(ctx))
   const version = useSessionVersion(ctx, () => props.sessionID)
@@ -715,7 +715,7 @@ function GraphPanel(props: { sessionID: string; enabled: boolean; filter: Filter
   const summary = createMemo(() => toSummary(entries(), props.filter))
   const header = createMemo(() => {
     const badge = props.filter === "all" ? "live" : `live · ${props.filter}`
-    return `${busy() ? "●" : "◉"} files · ${badge}`
+    return `${props.collapsed ? "▶" : "▼"} ${busy() ? "●" : "◉"} files · ${badge}`
   })
 
   createEffect(() => notifyFailures(ctx, props.sessionID, all()))
@@ -723,15 +723,21 @@ function GraphPanel(props: { sessionID: string; enabled: boolean; filter: Filter
   return (
     <Show when={props.enabled} fallback={<text fg={palette().dim}>{"files · off — Ctrl+P → Toggle File Graph"}</text>}>
       <box flexDirection="column" borderStyle="rounded" paddingLeft={1} paddingRight={1}>
-        <text fg={palette().head}>{header()}</text>
-        <Show when={lines().length > 0} fallback={<text fg={palette().dim}>{"no files yet — reads/edits appear here"}</text>}>
-          <For each={lines()}>{(line) => <text fg={line.color}>{line.text}</text>}</For>
-        </Show>
-        <Show when={summary()}>
-          <text fg={palette().dim}>{summary()}</text>
-        </Show>
-        <Show when={entries().length > MAX_FILES}>
-          <text fg={palette().dim}>{`+${entries().length - MAX_FILES} more — Ctrl+P → File Graph Detail`}</text>
+        <box
+          onMouseDown={(event: any) => { try { event?.stopPropagation?.() } catch {}; props.onToggle() }}
+        >
+          <text fg={palette().head}>{header()}</text>
+        </box>
+        <Show when={!props.collapsed}>
+          <Show when={lines().length > 0} fallback={<text fg={palette().dim}>{"no files yet — reads/edits appear here"}</text>}>
+            <For each={lines()}>{(line) => <text fg={line.color}>{line.text}</text>}</For>
+          </Show>
+          <Show when={summary()}>
+            <text fg={palette().dim}>{summary()}</text>
+          </Show>
+          <Show when={entries().length > MAX_FILES}>
+            <text fg={palette().dim}>{`+${entries().length - MAX_FILES} more — Ctrl+P → File Graph Detail`}</text>
+          </Show>
         </Show>
       </box>
     </Show>
@@ -801,11 +807,16 @@ export default Plugin.define({
   id: "graph-live.cli",
   setup(context) {
     const ctx = context
-    const [store, setStore] = ctx.storage.store<{ enabled: boolean; filter: Filter }>(SETTINGS_KEY, { initial: { enabled: true, filter: "all" } })
+    const [store, setStore] = ctx.storage.store<{ enabled: boolean; filter: Filter; collapsed: boolean }>(SETTINGS_KEY, { initial: { enabled: true, filter: "all", collapsed: ctx.options?.collapsedByDefault !== false } })
 
     const setFilter = (filter: Filter) => {
       void setStore((draft) => {
         draft.filter = filter
+      })
+    }
+    const toggleCollapsed = () => {
+      void setStore((draft) => {
+        draft.collapsed = !draft.collapsed
       })
     }
     const toggle = () => {
@@ -927,7 +938,7 @@ export default Plugin.define({
       append: "sidebar.content",
       render: (input) => {
         const sessionID = input.sessionID ?? ""
-        return <GraphPanel sessionID={sessionID} enabled={store.enabled} filter={store.filter} />
+        return <GraphPanel sessionID={sessionID} enabled={store.enabled} filter={store.filter} collapsed={store.collapsed} onToggle={toggleCollapsed} />
       },
     })
 
